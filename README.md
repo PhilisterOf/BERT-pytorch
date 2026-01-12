@@ -118,30 +118,32 @@ Hugging Face 的项目通常遵循 **“配置(Config) - 数据(Data) - 模型(M
 建议将你的项目命名为 `LogBERT-ParserFree`（或者更有学术感的名称），结构如下：
 
 ```text
-LogBERT-ParserFree/
-├── configs/                 # [配置] 存放超参数 (JSON/YAML)
-│   ├── hdfs_config.json
-│   └── bgl_config.json
-├── data/                    # [数据] 存放原始日志和处理后的文件 (通常加入 .gitignore)
-│   ├── raw/                 # 放 HDFS.log, BGL.log
-│   └── processed/           # 放 bert_hdfs_corpus.txt
-├── src/                     # [核心代码] 封装为 Python 包
-│   └── lad_bert/            # 你的包名 (Log Anomaly Detection BERT)
-│   │   ├── __init__.py
-│   │   ├── configuration_lad.py # 模型配置类
-│   │   ├── modeling_lad.py      # 模型定义 (修改后的 BERT + TimeEmbedding)
-│   │   └── data/            # [重点] 数据处理逻辑放这里
-│   │       ├── __init__.py
-│   │       ├── preprocessor.py  # <--- 你的免解析清洗脚本放这里
-│   │       └── dataset.py       # PyTorch Dataset 定义
-├── scripts/                 # [执行脚本] 用来运行的命令入口
-│   ├── run_preprocess.py    # <--- 调用 preprocessor 的入口
-│   ├── run_train.py
-│   └── run_inference.py
-├── notebooks/               # 实验用的 Jupyter Notebooks
-├── requirements.txt
-├── README.md
-└── setup.py                 # 使 src 可被安装
+BERT-pytorch/                  <-- 项目根目录
+├── setup.py                   <-- [新增] 安装脚本，让 Python 认识 bert_pytorch 包
+├── requirements.txt           <-- [新增] 依赖库列表
+├── README.md                  <-- 项目说明
+│
+├── data/                      <-- 数据目录
+│   ├── raw/                   <-- 存放原始日志 (HDFS.log, BGL.log)
+│   └── processed/             <-- 存放处理后的 .txt 文件
+│
+├── scripts/                   <-- [新增] 运行脚本目录 (参照 HF examples)
+│   └── run_preprocess.py      <-- 专门用于运行预处理的入口脚本
+│
+└── bert_pytorch/              <-- 核心源码包 (Library)
+    ├── __init__.py            <-- 暴露包接口
+    ├── dataset/
+    │   ├── __init__.py
+    │   ├── preprocessor.py    <-- 你的核心预处理类 (ParserFreePreprocessor)
+    │   ├── dataset.py         <-- PyTorch Dataset 定义
+    │   └── vocab.py           <-- 词表定义
+    ├── model/
+    │   ├── __init__.py
+    │   ├── bert.py
+    │   └── embedding/         <-- 存放 TimeEmbedding
+    └── trainer/
+        ├── __init__.py
+        └── pretrain.py
 ```
 
 #### 代码改进方案

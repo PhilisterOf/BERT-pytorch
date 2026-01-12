@@ -1,16 +1,21 @@
-# 核心引擎 (Python 3.8 支持的 PyTorch 2.4.1)
+# Core Engine (PyTorch 2.4.1 with Python 3.8 support)
 torch==2.4.1
-# 数据处理：Numpy 1.24.4 是支持 Python 3.8 且兼容 Torch 2.4 的最佳版本
+
+# Data Processing: Numpy 1.24.4 is the optimal version for Python 3.8 and Torch 2.4 compatibility
 numpy==1.24.4
 pandas==2.0.3
-# 机器学习与正则：sklearn 1.3.2 是支持 Python 3.8 的最后一个主版本
+
+# Machine Learning & Regex: sklearn 1.3.2 is the final major version supporting Python 3.8
 scikit-learn==1.3.2
 regex==2023.12.25
-# 可视化
+
+# Visualization
 matplotlib==3.7.5
 seaborn==0.13.2
-# 网络与进度条
+
+# Networking & Progress Bar
 requests==2.32.3
 tqdm==4.66.5
-# Jupyter 内核
+
+# Jupyter Kernel
 ipykernel==6.29.5
