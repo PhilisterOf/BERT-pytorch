@@ -56,24 +56,24 @@ sh init.sh
 # process data
 python data_process.py
 
-#run logbert
+# run logbert
 python logbert.py vocab
 python logbert.py train
 python logbert.py predict
 
-#run deeplog
+# run deeplog
 python deeplog.py vocab
 # set options["vocab_size"] = <vocab output> above
 python deeplog.py train
 python deeplog.py predict 
 
-#run loganomaly
+# run loganomaly
 python loganomaly.py vocab
 # set options["vocab_size"] = <vocab output> above
 python loganomaly.py train
 python loganomaly.py predict
 
-#run baselines
+# run baselines
 
 baselines.ipynb
 ```
