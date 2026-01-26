@@ -19,3 +19,7 @@ tqdm==4.66.5
 
 # Jupyter Kernel
 ipykernel==6.29.5
+
+# Hugging Face Ecology (Python 3.8 Compatible)
+transformers==4.41.2
+tokenizers==0.19.1

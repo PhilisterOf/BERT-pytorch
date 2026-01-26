@@ -118,6 +118,7 @@ Hugging Face 的项目通常遵循 **“配置(Config) - 数据(Data) - 模型(M
 建议将你的项目命名为 `LogBERT-ParserFree`（或者更有学术感的名称），结构如下：
 
 ```text
+V1
 BERT-pytorch/                  <-- 项目根目录
 ├── setup.py                   <-- [新增] 安装脚本，让 Python 认识 bert_pytorch 包
 ├── requirements.txt           <-- [新增] 依赖库列表
@@ -144,6 +145,49 @@ BERT-pytorch/                  <-- 项目根目录
     └── trainer/
         ├── __init__.py
         └── pretrain.py
+```
+
+```text
+V2
+AC-LogBERT/
+├── configs/                    # [新增] 配置文件 (Yaml/Json)，替代 argparser
+│   ├── model_config.json       # BERT 架构参数 (layers, heads, hidden...)
+│   └── train_config.json       # 训练参数 (lr, batch_size, adapter_active...)
+│
+├── data/                       # [保留] 数据存放
+│   ├── raw/                    # 原始日志 (HDFS_2k.log)
+│   └── processed/              # 预处理后的缓存 (pkl/h5)，避免重复 tokenize
+│
+├── src/                        # [核心] 源代码根目录
+│   ├── __init__.py
+│   │
+│   ├── data/                   # [重构] 数据处理模块
+│   │   ├── __init__.py
+│   │   ├── preprocessor.py     # [关键] Regex 清洗 + Parser-Free 逻辑
+│   │   └── dataset.py          # PyTorch Dataset (实现 MLM Masking)
+│   │
+│   ├── models/                 # [重构] 模型定义
+│   │   ├── __init__.py
+│   │   ├── backbone/           # [移植] 原 BERT-pytorch 代码放这里
+│   │   │   ├── __init__.py
+│   │   │   ├── bert.py         # 待修改: 添加 pooling
+│   │   │   ├── transformer.py  # 待修改: 插入 Adapter
+│   │   │   └── embedding.py    # 待修改: 兼容 HF Tokenizer 的 vocab size
+│   │   │
+│   │   └── logbert.py          # [新增] 包装器 (BERT + Heads + Loss)
+│   │
+│   ├── trainer/                # [新增] 训练循环与验证逻辑
+│   │   └── trainer.py
+│   │
+│   └── utils/                  # 工具类
+│       ├── metric.py           # F1, Recall, Precision
+│       └── logger.py           # 实验记录
+│
+├── scripts/                    # 执行脚本
+│   ├── train.py                # 训练入口
+│   └── predict.py              # 推理入口
+│
+└── requirements.txt            # 依赖管理
 ```
 
 #### 代码改进方案
