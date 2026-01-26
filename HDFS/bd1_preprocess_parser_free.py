@@ -45,7 +45,7 @@ INPUT_DIR = os.path.expanduser('../data/hdfs/')  # 请根据实际路径修改
 OUTPUT_DIR = '../output/hdfs/'
 
 # 输入文件名
-LOG_FILE = "HDFSS.log"
+LOG_FILE = "HDFS.log"
 LABEL_FILE = "anomaly_label.csv"
 
 # 确保输出目录存在，如果不存在则创建

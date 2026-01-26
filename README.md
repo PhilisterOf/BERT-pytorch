@@ -1,198 +1,78 @@
-# LogBERT: Log Anomaly Detection via BERT
+为了让你对整个实验流程的数据流向（Data Pipeline）一目了然，我将这些文件按**生成阶段**和**功能用途**进行了分类标注。
 
-### [ARXIV](https://arxiv.org/abs/2103.04475) 
+这些文件构成了你论文实验的完整证据链。
 
-This repository provides the implementation of Logbert for log anomaly detection. 
-The process includes downloading raw data online, parsing logs into structured data, 
-creating log sequences and finally modeling. 
+### 1. 核心产物 (The "Brain")
+这是训练脚本最终生成的、价值最高的文件。
 
-![alt](img/log_preprocess.png)
+*   **`best_model.pth`**
+    *   **来源**: `train.py` 在 Early Stopping 过程中保存的。
+    *   **内容**: 包含两个关键对象：
+        1.  `model_state_dict`: TinyBERT 的所有权重参数（已学会 HDFS 语法）。
+        2.  `center`: 训练好的超球体中心向量（正常日志的“聚类中心”）。
+    *   **用途**: **推理核心**。`predict.py` 将加载它来判断新日志离这个中心有多远。
 
-## Configuration
+### 2. 基础设施 (Infrastructure)
+这是让 BERT 理解日志“语言”的字典。
 
-- Ubuntu 20.04
-- NVIDIA driver 460.73.01 
-- CUDA 11.2
-- Python 3.8
-- PyTorch 1.9.0
+*   **`vocab.txt`**
+    *   **来源**: `train_tokenizer.py` (基于 `train.txt` 训练生成)。
+    *   **内容**: 约 3000 行。每行一个 Token（如 `[BLK]`, `packet`, `##ponder`）。
+    *   **用途**: **翻译官**。它负责把文本日志转换成数字 ID 序列。它是你“领域自适应（Domain Adaptation）”的核心证据。
 
-## Installation
+### 3. 数据集划分 (Data Splits)
+这是预处理脚本 `hdfs_preprocess.py` 将原始日志清洗并切分后的产物。
 
-This code requires the packages listed in requirements.txt.
-An virtual environment is recommended to run this code
+#### A. 训练组 (用于教模型什么是“正常”)
+*   **`train.csv`**
+    *   **内容**: 约 4855 条数据。**全都是正常样本 (Label=0)**。包含 `BlockId`, `EventSequence` 等列。
+    *   **用途**: `train.py` 读取它进行训练。`train_tokenizer.py` 读取它建立词表。
+*   **`train.txt`**
+    *   **内容**: `train.csv` 的纯文本版本（去除了 BlockId 和表头）。
+    *   **用途**: 专门喂给 `train_tokenizer.py` 的，因为 HuggingFace 的训练函数只吃纯文本。
 
-On macOS and Linux:  
+#### B. 测试组 - 正常 (用于验证误报率 False Positive)
+*   **`test_normal.csv`**
+    *   **内容**: 未参与训练的正常样本。
+    *   **用途**:
+        1.  在 `train.py` 中作为 **验证集** (Validation Set) 指导 Early Stopping。
+        2.  在 `predict.py` 中作为 **测试集**，模型**不应该**对它们报警。
+*   **`test_normal.txt`**
+    *   **内容**: 纯文本版本。
+    *   **用途**: 兼容性备份，方便肉眼查看清洗效果。
 
-```
-python3 -m pip install --user virtualenv
-python3 -m venv env
-source env/bin/activate
-pip install -r ./environment/requirements.txt
-deactivate
-```
+#### C. 测试组 - 异常 (用于验证召回率 Recall)
+*   **`test_abnormal.csv`**
+    *   **内容**: HDFS 中所有的异常样本 (Label=1)。
+    *   **用途**: **考卷**。在 `predict.py` 中使用。模型**必须**对它们报警。如果没报，就是漏报（False Negative）。
+*   **`test_abnormal.txt`**
+    *   **内容**: 纯文本版本。
+    *   **用途**: 兼容性备份。
 
-Reference: https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/
+#### D. 总集 (Master Copy)
+*   **`hdfs_sequence_sanitized.csv`**
+    *   **内容**: 清洗后的全量数据。
+    *   **用途**: **数据母版**。如果以后想改变 Train/Test 的切分比例（比如从 8:2 改成 5:5），不需要重新跑正则清洗，直接读这个文件重新切分即可。
 
-An alternative is to create a conda environment:
+---
 
-```
-    conda create -f ./environment/environment.yml
-    conda activate logbert
-```
+### 数据流向图 (Data Flow)
 
-Reference: https://docs.conda.io/en/latest/miniconda.html
-
-## Experiment
-
-Logbert and other baseline models are implemented on [HDFS](https://github.com/logpai/loghub/tree/master/HDFS), [BGL](https://github.com/logpai/loghub/tree/master/BGL), and [thunderbird]() datasets
-
-### HDFS example
-
-```shell script
-cd HDFS
-
-sh init.sh
-
-# process data
-python data_process.py
-
-# run logbert
-python logbert.py vocab
-python logbert.py train
-python logbert.py predict
-
-# run deeplog
-python deeplog.py vocab
-# set options["vocab_size"] = <vocab output> above
-python deeplog.py train
-python deeplog.py predict 
-
-# run loganomaly
-python loganomaly.py vocab
-# set options["vocab_size"] = <vocab output> above
-python loganomaly.py train
-python loganomaly.py predict
-
-# run baselines
-
-baselines.ipynb
+```mermaid
+graph TD
+    Raw[HDFS.log] --> |Step 1: hdfs_preprocess.py| Master[hdfs_sequence_sanitized.csv]
+    
+    Master --> |Split| TrainCSV[train.csv]
+    Master --> |Split| TestNorm[test_normal.csv]
+    Master --> |Split| TestAbnorm[test_abnormal.csv]
+    
+    TrainCSV --> |Extract Text| TrainTXT[train.txt]
+    TrainTXT --> |Step 2: train_tokenizer.py| Vocab[vocab.txt]
+    
+    TrainCSV & Vocab --> |Step 3: train.py| Model[best_model.pth]
+    TestNorm --> |Early Stopping| Model
+    
+    Model & Vocab & TestNorm & TestAbnorm --> |Step 4: predict.py| Result[F1 Score / Paper Tables]
 ```
 
-### Folders created during execution
-
-```shell script 
-~/.dataset //Stores original datasets after downloading
-project/output //Stores intermediate files and final results during execution
-```
-
-### mac上传文件到server
-
-```
-ssh ...
-# 上传文件
-scp -P 端口号 本地文件路径 root@地址:/root/autodl-tmp/
-# 上传文件夹
-scp -P 端口号 -r 本地文件夹 root@地址:/root/autodl-tmp/
-# 本地运行
-scp -P 43355 /Users/wangzhi/Downloads/dataset/HDFS_v1.zip root@region-41.seetacloud.com:/root/.dataset/
-
-```
-
-### 监控AutoDL状态
-```
-# (实时动态查看GPU（每秒刷新一次）)
-watch -n 1 nvidia-smi
-# (实时动态查看CPU)
-htop
-```
-
-### 代码结构
-如果你的目标是 **SCI Q4+** 并且希望代码结构显得**专业、严谨**（符合 Hugging Face Transformers 的工程标准），那么随便把脚本扔在根目录是不行的。审稿人如果看到你的 GitHub 仓库结构混乱，第一印象分会大打折扣。
-
-根据 **Hugging Face (HF)** 的标准项目结构，以及 Python 最佳实践，我为你设计了以下目录结构。
-
-#### 1. 推荐的项目结构 (Project Structure)
-
-Hugging Face 的项目通常遵循 **“配置(Config) - 数据(Data) - 模型(Model) - 脚本(Scripts)”分离** 的原则。
-
-建议将你的项目命名为 `LogBERT-ParserFree`（或者更有学术感的名称），结构如下：
-
-```text
-V1
-BERT-pytorch/                  <-- 项目根目录
-├── setup.py                   <-- [新增] 安装脚本，让 Python 认识 bert_pytorch 包
-├── requirements.txt           <-- [新增] 依赖库列表
-├── README.md                  <-- 项目说明
-│
-├── data/                      <-- 数据目录
-│   ├── raw/                   <-- 存放原始日志 (HDFS.log, BGL.log)
-│   └── processed/             <-- 存放处理后的 .txt 文件
-│
-├── scripts/                   <-- [新增] 运行脚本目录 (参照 HF examples)
-│   └── run_preprocess.py      <-- 专门用于运行预处理的入口脚本
-│
-└── bert_pytorch/              <-- 核心源码包 (Library)
-    ├── __init__.py            <-- 暴露包接口
-    ├── dataset/
-    │   ├── __init__.py
-    │   ├── preprocessor.py    <-- 你的核心预处理类 (ParserFreePreprocessor)
-    │   ├── dataset.py         <-- PyTorch Dataset 定义
-    │   └── vocab.py           <-- 词表定义
-    ├── model/
-    │   ├── __init__.py
-    │   ├── bert.py
-    │   └── embedding/         <-- 存放 TimeEmbedding
-    └── trainer/
-        ├── __init__.py
-        └── pretrain.py
-```
-
-```text
-V2
-AC-LogBERT/
-├── configs/                    # [新增] 配置文件 (Yaml/Json)，替代 argparser
-│   ├── model_config.json       # BERT 架构参数 (layers, heads, hidden...)
-│   └── train_config.json       # 训练参数 (lr, batch_size, adapter_active...)
-│
-├── data/                       # [保留] 数据存放
-│   ├── raw/                    # 原始日志 (HDFS_2k.log)
-│   └── processed/              # 预处理后的缓存 (pkl/h5)，避免重复 tokenize
-│
-├── src/                        # [核心] 源代码根目录
-│   ├── __init__.py
-│   │
-│   ├── data/                   # [重构] 数据处理模块
-│   │   ├── __init__.py
-│   │   ├── preprocessor.py     # [关键] Regex 清洗 + Parser-Free 逻辑
-│   │   └── dataset.py          # PyTorch Dataset (实现 MLM Masking)
-│   │
-│   ├── models/                 # [重构] 模型定义
-│   │   ├── __init__.py
-│   │   ├── backbone/           # [移植] 原 BERT-pytorch 代码放这里
-│   │   │   ├── __init__.py
-│   │   │   ├── bert.py         # 待修改: 添加 pooling
-│   │   │   ├── transformer.py  # 待修改: 插入 Adapter
-│   │   │   └── embedding.py    # 待修改: 兼容 HF Tokenizer 的 vocab size
-│   │   │
-│   │   └── logbert.py          # [新增] 包装器 (BERT + Heads + Loss)
-│   │
-│   ├── trainer/                # [新增] 训练循环与验证逻辑
-│   │   └── trainer.py
-│   │
-│   └── utils/                  # 工具类
-│       ├── metric.py           # F1, Recall, Precision
-│       └── logger.py           # 实验记录
-│
-├── scripts/                    # 执行脚本
-│   ├── train.py                # 训练入口
-│   └── predict.py              # 推理入口
-│
-└── requirements.txt            # 依赖管理
-```
-
-#### 代码改进方案
-
-1. Cursor+Composer 用OpenRouter代替解决方案
-2. 超参数搜索
-3. 保存每次训练、预测的超参数和F1
-
+所有文件都在它们该在的位置。现在，请开始编写最后的 **`predict.py`**，让我们看看这套系统的最终成绩单！
