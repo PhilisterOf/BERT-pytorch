@@ -46,71 +46,61 @@ class LogDataset(Dataset):
         return self.total_lines
 
     def __getitem__(self, idx):
-        # 获取原始文本 (Parser-Free Text)
         text = self.df.iloc[idx]['EventSequence']
-        label = self.df.iloc[idx].get('Label', 0)  # 默认为 0 (Normal)
+        label = self.df.iloc[idx].get('Label', 0)
 
-        # ================= Step 1: Tokenization =================
-        # 使用 HuggingFace Tokenizer 转换文本为 ID
-        # add_special_tokens=True 会自动添加 [CLS] 和 [SEP]
-        # 注意：这里我们不立即做 padding，因为要先做 mask 和 shuffle
-        tokens = self.tokenizer.encode(text, add_special_tokens=True, truncation=True, max_length=self.seq_len)
+        # 1. 先全部 Encode (不截断)
+        tokens = self.tokenizer.encode(text, add_special_tokens=True, truncation=False)
 
-        # 给 tokens 起了一个别名（Alias），叫 input_ids
-        input_ids = tokens
+        # ================= [核心修改] Random Crop =================
+        # 如果序列过长，随机切一段，而不是只取开头
+        if len(tokens) > self.seq_len:
+            # 计算可以滑动的最大起始位置
+            max_start = len(tokens) - self.seq_len
 
-        # 长度校验
+            # 随机选一个起点 (Random Crop)
+            start_idx = random.randint(0, max_start)
+            end_idx = start_idx + self.seq_len
+
+            input_ids = tokens[start_idx: end_idx]
+
+            # 强制保证第一个词是 [CLS] (这对 BERT 很重要)
+            if input_ids[0] != self.tokenizer.cls_token_id:
+                input_ids[0] = self.tokenizer.cls_token_id
+        else:
+            # 短序列：直接用
+            input_ids = tokens
+        # ========================================================
+
+        # 下面的逻辑保持不变 (Padding & Masking)
         if len(input_ids) < self.min_len:
-            # 如果太短，为了工程健壮性，我们补齐到一个最小长度或直接返回 Padding
-            # 这里选择补齐并标记为不参与 loss 计算
             padding = [self.tokenizer.pad_token_id] * (self.seq_len - len(input_ids))
             return {
                 "bert_input": torch.tensor(input_ids + padding),
-                # TODO: 全量 mask，确保 CrossEntropyLoss 完全忽略此样本
-                # "bert_label": torch.tensor([-100] * self.seq_len),
                 "bert_label": torch.tensor([-100] * len(input_ids) + padding),
                 "contrastive_pos": torch.tensor(input_ids + padding),
-                "contrastive_neg": torch.tensor(input_ids + padding),  # 太短无法 shuffle
+                "contrastive_neg": torch.tensor(input_ids + padding),
                 "segment_label": torch.tensor(label)
             }
 
-        # ================= Step 2: Masked Language Model (MLM) =================
-        # 参考原 bert_pytorch 的 random_word 逻辑
-        # bert_input: 被挖空的序列
-        # bert_label: 原始值的标签 (非 Mask 位置为 -100)
         bert_input, bert_label = self.random_word(input_ids)
-
-        # ================= Step 3: Contrastive Learning Augmentation =================
-        # [创新点] 构造 "Hard Negative" (困难负样本)
-        # 逻辑：将原始序列随机打乱 (Shuffle)，破坏时序逻辑
-        # 原始序列 (Anchor) -> contrastive_pos
-        # 乱序序列 (Negative) -> contrastive_neg
-        contrastive_pos = input_ids[:]  # 浅拷贝
+        contrastive_pos = input_ids[:]
         contrastive_neg = self.random_shuffle(input_ids[:], self.min_len)
 
-        # ================= Step 4: Padding =================
-        # 统一补齐到 seq_len
         padding_len = self.seq_len - len(input_ids)
 
-        # 辅助函数: 执行 padding
         def pad(seq, val=0):
             return seq + [val] * padding_len
 
-        # [PAD] ID 通常为 0
         pad_id = self.tokenizer.pad_token_id
 
-        output = {
+        return {
             "bert_input": torch.tensor(pad(bert_input, pad_id)),
-            "bert_label": torch.tensor(pad(bert_label, -100)),  # Loss 计算忽略 -100
-
-            # 对比学习用的正负样本 (不 Mask，只 Pad)
+            "bert_label": torch.tensor(pad(bert_label, -100)),
             "contrastive_pos": torch.tensor(pad(contrastive_pos, pad_id)),
             "contrastive_neg": torch.tensor(pad(contrastive_neg, pad_id)),
-
-            "segment_label": torch.tensor(label, dtype=torch.long)  # 0=Normal, 1=Anomaly
+            "segment_label": torch.tensor(label, dtype=torch.long)
         }
-
-        return output
 
     def random_word(self, sentence):
         """

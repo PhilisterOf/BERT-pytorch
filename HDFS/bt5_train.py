@@ -41,7 +41,7 @@ class Config:
         # 训练配置
         self.batch_size = 64
         # TODO: 修改训练论数
-        self.epochs = 20
+        self.epochs = 50
         self.lr = 1e-3
         self.weight_decay = 1e-4
 
