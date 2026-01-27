@@ -167,10 +167,10 @@ def train_tokenizer(corpus_files: list, output_dir: str, vocab_size: int = 3000)
 
 if __name__ == "__main__":
     # 配置路径
-    # TODO: 确认你的输入文件路径是否正确，只允许用训练集建立vocab
+    # TODO: 确认你的输入文件路径是否正确，词表建立逻辑
     # 注意：这里改为了你上一轮提到的目录结构
-    # INPUT_CSV = "../output/hdfs/hdfs_sequence_sanitized.csv"
-    INPUT_CSV = "../output/hdfs/train.csv"
+    INPUT_CSV = "../output/hdfs/hdfs_sequence_sanitized.csv"
+    # INPUT_CSV = "../output/hdfs/train.csv"
 
     # 临时文件路径 (中间产物)
     TEMP_CORPUS = "../output/hdfs/raw_corpus.txt"

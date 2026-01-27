@@ -76,3 +76,96 @@ graph TD
 ```
 
 所有文件都在它们该在的位置。现在，请开始编写最后的 **`predict.py`**，让我们看看这套系统的最终成绩单！
+
+```
+D:\develop\miniconda3\envs\berttorch\python.exe D:\OtherProjects\BERT-pytorch\HDFS\bt5_train.py 
+[-] Random seed set to 42
+[-] Training on cuda
+[-] Loading data from ../output/hdfs/train.csv...
+    Loaded 4855 samples.
+[-] Splitting: Train=4370, Val=485
+[-] Vocab Size: 424
+[-] Initializing Hypersphere Center...
+Init Center:   0%|          | 0/68 [00:00<?, ?it/s]D:\develop\miniconda3\envs\berttorch\lib\site-packages\transformers\models\bert\modeling_bert.py:435: UserWarning: 1Torch was not compiled with flash attention. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\builder\windows\pytorch\aten\src\ATen\native\transformers\cuda\sdp_utils.cpp:555.)
+  attn_output = torch.nn.functional.scaled_dot_product_attention(
+Init Center: 100%|██████████| 68/68 [00:21<00:00,  3.12it/s]
+[-] Center initialized. Norm: 2.2295
+Epoch 1/50 [Train]: 100%|██████████| 68/68 [00:24<00:00,  2.76it/s, Loss=0.8494, MLM_Acc=53.62%]
+Epoch 1: Train Loss=2.2211, Val Loss=0.8185, Train Acc=53.62%
+    [*] Saving new best model...
+Epoch 2/50 [Train]: 100%|██████████| 68/68 [00:24<00:00,  2.74it/s, Loss=0.2965, MLM_Acc=79.62%]
+Epoch 2: Train Loss=0.5808, Val Loss=0.2288, Train Acc=79.62%
+    [*] Saving new best model...
+Epoch 3/50 [Train]: 100%|██████████| 68/68 [00:24<00:00,  2.78it/s, Loss=0.1420, MLM_Acc=96.11%]
+Epoch 3: Train Loss=0.1777, Val Loss=0.0808, Train Acc=96.11%
+    [*] Saving new best model...
+Epoch 4/50 [Train]: 100%|██████████| 68/68 [00:24<00:00,  2.77it/s, Loss=0.0846, MLM_Acc=98.06%]
+Epoch 4: Train Loss=0.0988, Val Loss=0.0536, Train Acc=98.06%
+    [*] Saving new best model...
+Epoch 5/50 [Train]: 100%|██████████| 68/68 [00:24<00:00,  2.77it/s, Loss=0.0702, MLM_Acc=98.56%]
+Epoch 5: Train Loss=0.0712, Val Loss=0.0406, Train Acc=98.56%
+    [*] Saving new best model...
+Epoch 6/50 [Train]: 100%|██████████| 68/68 [00:24<00:00,  2.74it/s, Loss=0.0250, MLM_Acc=98.84%]
+Epoch 6: Train Loss=0.0603, Val Loss=0.0308, Train Acc=98.84%
+    [*] Saving new best model...
+Epoch 7/50 [Train]: 100%|██████████| 68/68 [00:24<00:00,  2.72it/s, Loss=0.0160, MLM_Acc=98.94%]
+Epoch 7: Train Loss=0.0512, Val Loss=0.0301, Train Acc=98.94%
+    [*] Saving new best model...
+Epoch 8/50 [Train]: 100%|██████████| 68/68 [00:24<00:00,  2.82it/s, Loss=0.0109, MLM_Acc=99.08%]
+Epoch 8: Train Loss=0.0467, Val Loss=0.0204, Train Acc=99.08%
+    [*] Saving new best model...
+Epoch 9/50 [Train]: 100%|██████████| 68/68 [00:24<00:00,  2.74it/s, Loss=0.0087, MLM_Acc=99.18%]
+Epoch 9: Train Loss=0.0370, Val Loss=0.0138, Train Acc=99.18%
+    [*] Saving new best model...
+Epoch 10/50 [Train]: 100%|██████████| 68/68 [00:23<00:00,  2.84it/s, Loss=0.0188, MLM_Acc=99.33%]
+Epoch 10: Train Loss=0.0294, Val Loss=0.0163, Train Acc=99.33%
+    [!] Patience: 1/3
+Epoch 11/50 [Train]: 100%|██████████| 68/68 [00:24<00:00,  2.82it/s, Loss=0.0423, MLM_Acc=99.39%]
+Epoch 11: Train Loss=0.0269, Val Loss=0.0073, Train Acc=99.39%
+    [*] Saving new best model...
+Epoch 12/50 [Train]: 100%|██████████| 68/68 [00:24<00:00,  2.75it/s, Loss=0.0114, MLM_Acc=99.41%]
+Epoch 12: Train Loss=0.0257, Val Loss=0.0062, Train Acc=99.41%
+    [*] Saving new best model...
+Epoch 13/50 [Train]: 100%|██████████| 68/68 [00:24<00:00,  2.75it/s, Loss=0.0053, MLM_Acc=99.56%]
+Epoch 14/50 [Train]:   0%|          | 0/68 [00:00<?, ?it/s]Epoch 13: Train Loss=0.0194, Val Loss=0.0068, Train Acc=99.56%
+    [!] Patience: 1/3
+Epoch 14/50 [Train]: 100%|██████████| 68/68 [00:24<00:00,  2.80it/s, Loss=0.0276, MLM_Acc=99.60%]
+Epoch 15/50 [Train]:   0%|          | 0/68 [00:00<?, ?it/s]Epoch 14: Train Loss=0.0173, Val Loss=0.0076, Train Acc=99.60%
+    [!] Patience: 2/3
+Epoch 15/50 [Train]: 100%|██████████| 68/68 [00:24<00:00,  2.81it/s, Loss=0.0302, MLM_Acc=99.60%]
+Epoch 15: Train Loss=0.0161, Val Loss=0.0067, Train Acc=99.60%
+    [!] Patience: 3/3
+    [STOP] Early stopping triggered.
+```
+```
+D:\develop\miniconda3\envs\berttorch\python.exe D:\OtherProjects\BERT-pytorch\HDFS\bp6_predict.py 
+[-] Random seed set to 42
+[-] Loading model from ../output/hdfs/best_model.pth
+[-] Loading data from ../output/hdfs/test_normal.csv...
+    Loaded 553368 samples.
+[-] Vocab Size: 424
+[-] Model loaded. Center norm: 2.2295
+[-] Loading data from ../output/hdfs/test_normal.csv...
+    Loaded 553368 samples.
+[-] Normal Sampling: 10.0% (55336/553368)
+[-] Loading data from ../output/hdfs/test_abnormal.csv...
+    Loaded 16838 samples.
+[-] Abnormal Sampling: 10.0% (1683/16838)
+[-] Computing scores...
+Inference (Max-Strat):   0%|          | 0/109 [00:00<?, ?it/s]D:\develop\miniconda3\envs\berttorch\lib\site-packages\transformers\models\bert\modeling_bert.py:435: UserWarning: 1Torch was not compiled with flash attention. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\builder\windows\pytorch\aten\src\ATen\native\transformers\cuda\sdp_utils.cpp:555.)
+  attn_output = torch.nn.functional.scaled_dot_product_attention(
+Inference (Max-Strat): 100%|██████████| 109/109 [01:29<00:00,  1.21it/s]
+Inference (Max-Strat): 100%|██████████| 4/4 [00:24<00:00,  6.00s/it]
+
+============================================================
+FINAL EVALUATION REPORT (Ratio=0.1)
+============================================================
+Strategy: Distance Only        | Best F1: 0.1848 | AUC: 0.5249
+Strategy: MLM (Mean)           | Best F1: 0.3718 | AUC: 0.6737
+Strategy: MLM (Max)            | Best F1: 0.3787 | AUC: 0.6503
+Strategy: Hybrid (Max+Dist)    | Best F1: 0.3787 | AUC: 0.6640
+============================================================
+[-] Benchmark saved to ../output/hdfs/
+
+Process finished with exit code 0
+```

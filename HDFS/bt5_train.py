@@ -31,7 +31,8 @@ class Config:
         self.vocab_path = "../output/hdfs/"
 
         # TinyBERT 超参 (论文核心配置)
-        self.max_len = 128
+        # TODO: 修改序列最大长度
+        self.max_len = 512
         self.hidden = 128
         self.layers = 2
         self.heads = 4
@@ -39,7 +40,8 @@ class Config:
 
         # 训练配置
         self.batch_size = 64
-        self.epochs = 50
+        # TODO: 修改训练论数
+        self.epochs = 20
         self.lr = 1e-3
         self.weight_decay = 1e-4
 
