@@ -244,28 +244,114 @@ Epoch 50: Train Loss=0.0352, Val Loss=0.0117, Train Acc=98.89%
 Process finished with exit code 0
 ```
 ```
-D:\develop\miniconda3\envs\berttorch\python.exe -X pycache_prefix=C:\Users\Philister\AppData\Local\JetBrains\PyCharm2024.3\cpython-cache "D:/Program Files/JetBrains/PyCharm 2024.3.6/plugins/python-ce/helpers/pydev/pydevd.py" --multiprocess --qt-support=auto --client 127.0.0.1 --port 4138 --file D:\OtherProjects\BERT-pytorch\HDFS\bp6_predict.py 
-Connected to pydev debugger (build 243.26574.90)
-[-] Loading model...
-D:\OtherProjects\BERT-pytorch\HDFS\bp6_predict.py:127: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
-  checkpoint = torch.load(cfg.model_path, map_location=cfg.device)  # , weights_only=True)
+self.test_ratio = 0.1
+D:\develop\miniconda3\envs\berttorch\python.exe D:\OtherProjects\BERT-pytorch\HDFS\bp6_predict.py
+[-] Loaded Tokenizer. Real Vocab Size: 424
+[-] Loading model from ../output/hdfs/best_model.pth...
+[-] Hypersphere Center loaded. Norm: 2.2375
 [-] Loading data from ../output/hdfs/test_normal.csv...
 [-] Loading data from ../output/hdfs/test_abnormal.csv...
+Extracting Features:   0%|          | 0/109 [00:00<?, ?it/s][-] Extracting features (K=10)...
+D:\develop\miniconda3\envs\berttorch\lib\site-packages\transformers\models\bert\modeling_bert.py:435: UserWarning: 1Torch was not compiled with flash attention. (Triggered internally at C:\actions-runner_work\pytorch\pytorch\builder\windows\pytorch\aten\src\ATen\native\transformers\cuda\sdp_utils.cpp:555.)
+attn_output = torch.nn.functional.scaled_dot_product_attention(
+Extracting Features: 100%|██████████| 109/109 [01:30<00:00,  1.21it/s]
+Extracting Features: 100%|██████████| 4/4 [00:25<00:00,  6.47s/it]
+============================================================
+HYBRID SEARCH (Alpha * Dist + (1-Alpha) * TopK)
+Alpha  | Prec     | Rec      | F1       | AUC
+0.0    | 0.9533   | 0.8241   | 0.8840   | 0.9139
+0.1    | 0.9535   | 0.8289   | 0.8868   | 0.9179
+0.2    | 0.9541   | 0.8271   | 0.8861   | 0.9178
+0.3    | 0.9364   | 0.8217   | 0.8753   | 0.9177
+0.4    | 0.8955   | 0.8200   | 0.8561   | 0.9175
+0.5    | 0.9232   | 0.7576   | 0.8322   | 0.9163
+0.6    | 0.6656   | 0.6090   | 0.6361   | 0.9089
+0.7    | 0.7990   | 0.2763   | 0.4106   | 0.8895
+0.8    | 0.8012   | 0.2442   | 0.3743   | 0.8760
+0.9    | 0.7952   | 0.2377   | 0.3660   | 0.8566
+1.0    | 0.7162   | 0.2175   | 0.3336   | 0.7658
+🏆 BEST RESULT:
+Alpha    : 0.1 (0=TopK, 1=Dist)
+F1 Score : 0.8868
+AUC Score: 0.9179
+结论: 混合策略有效！
+Process finished with exit code 0
+```
+```
+self.test_ratio = 0.5
+D:\develop\miniconda3\envs\berttorch\python.exe D:\OtherProjects\BERT-pytorch\HDFS\bp6_predict.py 
+[-] Loaded Tokenizer. Real Vocab Size: 424
+[-] Loading model from ../output/hdfs/best_model.pth...
+[-] Hypersphere Center loaded. Norm: 2.2375
+[-] Loading data from ../output/hdfs/test_normal.csv...
+[-] Loading data from ../output/hdfs/test_abnormal.csv...
+Extracting Features:   0%|          | 0/541 [00:00<?, ?it/s][-] Extracting features (K=10)...
+D:\develop\miniconda3\envs\berttorch\lib\site-packages\transformers\models\bert\modeling_bert.py:435: UserWarning: 1Torch was not compiled with flash attention. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\builder\windows\pytorch\aten\src\ATen\native\transformers\cuda\sdp_utils.cpp:555.)
+  attn_output = torch.nn.functional.scaled_dot_product_attention(
+Extracting Features: 100%|██████████| 541/541 [05:34<00:00,  1.62it/s]
+Extracting Features: 100%|██████████| 17/17 [00:33<00:00,  1.94s/it]
 
 ============================================================
-FINAL TOP-K EVALUATION (Ratio=0.1)
+HYBRID SEARCH (Alpha * Dist + (1-Alpha) * TopK)
 ============================================================
-[-] Scoring Top-5...
-Inference (Top-5):   0%|          | 0/109 [00:00<?, ?it/s]D:\develop\miniconda3\envs\berttorch\lib\site-packages\transformers\models\bert\modeling_bert.py:435: UserWarning: 1Torch was not compiled with flash attention. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\builder\windows\pytorch\aten\src\ATen\native\transformers\cuda\sdp_utils.cpp:555.)
+Alpha  | Prec     | Rec      | F1       | AUC     
+--------------------------------------------------
+0.0    | 0.9419   | 0.8147   | 0.8737   | 0.9087
+0.1    | 0.9421   | 0.8192   | 0.8764   | 0.9132
+0.2    | 0.9411   | 0.8179   | 0.8752   | 0.9132
+0.3    | 0.9163   | 0.8170   | 0.8638   | 0.9131
+0.4    | 0.8899   | 0.8067   | 0.8463   | 0.9129
+0.5    | 0.9022   | 0.7636   | 0.8271   | 0.9118
+0.6    | 0.7098   | 0.6073   | 0.6546   | 0.9058
+0.7    | 0.6619   | 0.3101   | 0.4224   | 0.8865
+0.8    | 0.7697   | 0.2465   | 0.3734   | 0.8729
+0.9    | 0.7474   | 0.2365   | 0.3593   | 0.8532
+1.0    | 0.6960   | 0.2172   | 0.3311   | 0.7623
+============================================================
+🏆 BEST RESULT:
+   Alpha    : 0.1 (0=TopK, 1=Dist)
+   F1 Score : 0.8764
+   AUC Score: 0.9132
+>> 结论: Top-K 仍然主导。
+
+Process finished with exit code 0
+```
+```
+self.test_ratio = 1
+D:\develop\miniconda3\envs\berttorch\python.exe D:\OtherProjects\BERT-pytorch\HDFS\bp6_predict.py 
+[-] Loaded Tokenizer. Real Vocab Size: 424
+[-] Loading model from ../output/hdfs/best_model.pth...
+[-] Hypersphere Center loaded. Norm: 2.2375
+[-] Loading data from ../output/hdfs/test_normal.csv...
+[-] Loading data from ../output/hdfs/test_abnormal.csv...
+[-] Extracting features (K=10)...
+Extracting Features:   0%|          | 0/1081 [00:00<?, ?it/s]D:\develop\miniconda3\envs\berttorch\lib\site-packages\transformers\models\bert\modeling_bert.py:435: UserWarning: 1Torch was not compiled with flash attention. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\builder\windows\pytorch\aten\src\ATen\native\transformers\cuda\sdp_utils.cpp:555.)
   attn_output = torch.nn.functional.scaled_dot_product_attention(
-Inference (Top-5): 100%|██████████| 109/109 [03:19<00:00,  1.83s/it]
-Inference (Top-5): 100%|██████████| 4/4 [00:41<00:00, 10.31s/it]
-Strategy: Top-5  | Best F1: 0.8532 | AUC: 0.9136
-[-] Scoring Top-10...
-Inference (Top-10): 100%|██████████| 109/109 [03:20<00:00,  1.84s/it]
-Inference (Top-10): 100%|██████████| 4/4 [00:42<00:00, 10.53s/it]
-Strategy: Top-10 | Best F1: 0.8855 | AUC: 0.9145
+Extracting Features: 100%|██████████| 1081/1081 [10:42<00:00,  1.68it/s]
+Extracting Features: 100%|██████████| 33/33 [00:42<00:00,  1.28s/it]
+
 ============================================================
+HYBRID SEARCH (Alpha * Dist + (1-Alpha) * TopK)
+============================================================
+Alpha  | Prec     | Rec      | F1       | AUC     
+--------------------------------------------------
+0.0    | 0.9441   | 0.8179   | 0.8765   | 0.9104
+0.1    | 0.9443   | 0.8224   | 0.8792   | 0.9159
+0.2    | 0.9440   | 0.8214   | 0.8784   | 0.9159
+0.3    | 0.9181   | 0.8207   | 0.8667   | 0.9158
+0.4    | 0.8931   | 0.8093   | 0.8491   | 0.9157
+0.5    | 0.9050   | 0.7669   | 0.8303   | 0.9146
+0.6    | 0.7142   | 0.6127   | 0.6595   | 0.9085
+0.7    | 0.6649   | 0.3093   | 0.4222   | 0.8892
+0.8    | 0.7652   | 0.2461   | 0.3724   | 0.8753
+0.9    | 0.7469   | 0.2345   | 0.3570   | 0.8553
+1.0    | 0.6932   | 0.2158   | 0.3291   | 0.7630
+============================================================
+🏆 BEST RESULT:
+   Alpha    : 0.1 (0=TopK, 1=Dist)
+   F1 Score : 0.8792
+   AUC Score: 0.9159
+>> 结论: Top-K 仍然主导。
 
 Process finished with exit code 0
 ```
