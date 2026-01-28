@@ -9,7 +9,7 @@ from tqdm import tqdm
 from transformers import BertTokenizer
 from sklearn.metrics import precision_recall_curve, roc_auc_score, f1_score
 import random
-from HDFS.bm4_bert import LogBERT
+from hdsf.bm4_bert import LogBERT
 
 
 # ==================== 全局种子设置 ====================

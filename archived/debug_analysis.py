@@ -5,7 +5,7 @@ import numpy as np
 from transformers import BertTokenizer
 import sys
 import os
-from HDFS.bm4_bert import LogBERT
+from hdsf.bm4_bert import LogBERT
 
 
 # ================= 配置 =================

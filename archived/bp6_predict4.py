@@ -8,8 +8,8 @@ from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
 from sklearn.metrics import precision_recall_curve, roc_auc_score, f1_score, precision_score, recall_score
 import random
-from HDFS.bd3_dataset import LogDataset
-from HDFS.bm4_bert import LogBERT
+from hdsf.bd3_dataset import LogDataset
+from hdsf.bm4_bert import LogBERT
 
 
 

@@ -9,9 +9,9 @@ from tqdm import tqdm
 from transformers import BertTokenizer
 from sklearn.metrics import precision_recall_curve, roc_auc_score, f1_score
 import random
-from HDFS.bd3_dataset import LogDataset
+from hdsf.bd3_dataset import LogDataset
 from torch.utils.data import DataLoader, Dataset, Subset # <--- 加上 Subset
-from HDFS.bm4_bert import LogBERT
+from hdsf.bm4_bert import LogBERT
 
 
 def set_seed(seed=42):

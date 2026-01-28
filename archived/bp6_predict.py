@@ -9,8 +9,8 @@ from sklearn.metrics import precision_recall_curve, auc, roc_auc_score, f1_score
 import random
 
 # 引入项目模块
-from HDFS.bd3_dataset import LogDataset
-from HDFS.bm4_bert import LogBERT
+from hdsf.bd3_dataset import LogDataset
+from hdsf.bm4_bert import LogBERT
 
 
 # ==================== 全局种子设置 (复现性保障) ====================

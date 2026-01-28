@@ -7,8 +7,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
-from HDFS.bd3_dataset import LogDataset
-from HDFS.bm4_bert import LogBERT
+from hdsf.bd3_dataset import LogDataset
+from hdsf.bm4_bert import LogBERT
 
 
 

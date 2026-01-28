@@ -9,8 +9,8 @@ import numpy as np
 
 # 导入我们自定义的模块
 # 假设你的目录结构是标准的 src.data 和 src.models
-from HDFS.bd3_dataset import LogDataset
-from HDFS.bm4_bert import LogBERT
+from hdsf.bd3_dataset import LogDataset
+from hdsf.bm4_bert import LogBERT
 
 
 # ==================== 配置类 ====================
