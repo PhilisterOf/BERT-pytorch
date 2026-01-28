@@ -8,8 +8,8 @@ import torch.nn.functional as F  # 新增引用
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
-from HDFS.bd3_dataset import LogDataset
-from HDFS.bm4_bert import LogBERT
+from hdfs.bd3_dataset import LogDataset
+from hdfs.bm4_bert import LogBERT
 
 
 def set_seed(seed=42):
