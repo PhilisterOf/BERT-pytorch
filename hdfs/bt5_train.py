@@ -4,7 +4,6 @@ import random
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F  # 新增引用
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
@@ -32,6 +31,7 @@ class Config:
         self.vocab_path = "../output/hdfs/"
 
         # TinyBERT 超参 (论文核心配置)
+        # TODO: 修改序列最大长度
         self.max_len = 512
         self.hidden = 128
         self.layers = 2
@@ -40,15 +40,14 @@ class Config:
 
         # 训练配置
         self.batch_size = 64
+        # TODO: 修改训练论数
         self.epochs = 50
         self.lr = 1e-3
         self.weight_decay = 1e-4
 
-        # TODO: Trinity Loss 权重 [修改点 2] 大幅降低 SVDD 权重
-        # 让模型优先学好 MLM (语义)，SVDD 只是辅助
-        self.w_svdd = 0.05     # 从 0.5 改为 0.05(防止坍塌)
-        self.w_simcse = 0.05  # 从 0.1 改为 0.05
-        self.temp_simcse = 0.05
+        # Loss 权重
+        self.contrastive_weight = 1.0
+        self.margin = 0.5
 
         # 验证与早停
         self.patience = 3
@@ -71,11 +70,7 @@ def init_center(model, dataloader, device):
             center += torch.sum(embeddings, dim=0)
             n_samples += input_ids.size(0)
     center /= n_samples
-
-    # 防止中心为0
-    if torch.norm(center) < 1e-5:
-        center += 1e-4
-
+    # 归一化可以增加训练稳定性，但在 SimCSE 中保持模长通常更好
     print(f"[-] Center initialized. Norm: {torch.norm(center).item():.4f}")
     return center
 
@@ -85,21 +80,12 @@ def save_model(model, center, epoch, path):
     torch.save({
         'epoch': epoch,
         'model_state_dict': model.state_dict(),
-        'center': center.cpu()
+        'center': center.cpu()  # 移至 CPU 保存，通用性更好
     }, path)
 
 
-# [新增] SimCSE Loss 计算函数
-def compute_simcse_loss(z1, z2, temperature=0.05):
-    batch_size = z1.size(0)
-    sim_matrix = F.cosine_similarity(z1.unsqueeze(1), z2.unsqueeze(0), dim=2) / temperature
-    labels = torch.arange(batch_size).to(z1.device)
-    loss = F.cross_entropy(sim_matrix, labels)
-    return loss
-
-
-def validate(model, val_loader, center, criterion_mlm, device, cfg):
-    """计算验证集 Loss (MLM + SVDD)"""
+def validate(model, val_loader, center, criterion_mlm, criterion_triplet, device, cfg):
+    """计算验证集 Loss"""
     model.eval()
     total_loss = 0
     total_samples = 0
@@ -109,21 +95,20 @@ def validate(model, val_loader, center, criterion_mlm, device, cfg):
             bert_input = batch["bert_input"].to(device)
             bert_label = batch["bert_label"].to(device)
             pos_input = batch["contrastive_pos"].to(device)
-            # neg_input 在 SVDD 模式下不需要
+            neg_input = batch["contrastive_neg"].to(device)
 
             mlm_logits, _ = model(bert_input)
             _, pos_emb = model(pos_input)
+            _, neg_emb = model(neg_input)
 
             vocab_size = mlm_logits.size(-1)
-            # 1. MLM Loss
+            # 计算验证 Loss
             mlm_loss = criterion_mlm(mlm_logits.view(-1, vocab_size), bert_label.view(-1))
 
-            # 2. SVDD Loss (MSE)
-            dist_sq = torch.sum((pos_emb - center) ** 2, dim=1)
-            svdd_loss = torch.mean(dist_sq)
+            batch_center = center.unsqueeze(0).expand(pos_emb.size(0), -1)
+            cont_loss = criterion_triplet(batch_center, pos_emb, neg_emb)
 
-            # 验证集不加 SimCSE，只关注聚类效果
-            loss = mlm_loss + cfg.w_svdd * svdd_loss
+            loss = mlm_loss + cfg.contrastive_weight * cont_loss
 
             batch_size = bert_input.size(0)
             total_loss += loss.item() * batch_size
@@ -150,7 +135,6 @@ def train(cfg):
         generator=torch.Generator().manual_seed(42)
     )
 
-    # drop_last=True 对 SimCSE 很重要
     train_loader = DataLoader(train_subset, batch_size=cfg.batch_size, shuffle=True, drop_last=True)
     valid_loader = DataLoader(val_subset, batch_size=cfg.batch_size, shuffle=False)
 
@@ -172,7 +156,7 @@ def train(cfg):
     # 4. 优化器与 Loss
     optimizer = optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
     criterion_mlm = nn.CrossEntropyLoss(ignore_index=-100)
-    # [修改点] 移除了 TripletLoss
+    criterion_triplet = nn.TripletMarginLoss(margin=cfg.margin, p=2)
 
     best_val_loss = float('inf')
     patience_counter = 0
@@ -183,7 +167,7 @@ def train(cfg):
         total_train_loss = 0
         total_batches = 0
 
-        # 监控 MLM 准确率
+        # [新增] 监控 MLM 准确率
         total_correct = 0
         total_masked = 0
 
@@ -193,44 +177,30 @@ def train(cfg):
             bert_input = batch["bert_input"].to(cfg.device)
             bert_label = batch["bert_label"].to(cfg.device)
             pos_input = batch["contrastive_pos"].to(cfg.device)
-            # neg_input = batch["contrastive_neg"].to(cfg.device) # 不再使用
+            neg_input = batch["contrastive_neg"].to(cfg.device)
 
             # Forward
-            # 1. MLM 任务
             mlm_logits, _ = model(bert_input)
-
-            # 2. SimCSE + SVDD 任务 (两次 Forward 获取 Dropout 差异)
-            _, emb1 = model(pos_input)
-            _, emb2 = model(pos_input)
+            _, pos_emb = model(pos_input)
+            _, neg_emb = model(neg_input)
 
             # Loss Calculation
-            # A. MLM
             mlm_loss = criterion_mlm(mlm_logits.view(-1, vocab_size), bert_label.view(-1))
 
-            # B. SVDD (让 emb1 靠近 center)
-            dist_sq = torch.sum((emb1 - center) ** 2, dim=1)
-            svdd_loss = torch.mean(dist_sq)
+            batch_center = center.unsqueeze(0).expand(pos_emb.size(0), -1)
+            cont_loss = criterion_triplet(batch_center, pos_emb, neg_emb)
 
-            # C. SimCSE (让 emb1 和 emb2 相似，且与其他样本不相似)
-            simcse_loss = compute_simcse_loss(emb1, emb2, cfg.temp_simcse)
-
-            # Total Loss
-            loss = mlm_loss + (cfg.w_svdd * svdd_loss) + (cfg.w_simcse * simcse_loss)
+            loss = mlm_loss + cfg.contrastive_weight * cont_loss
 
             # Backward
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            # [新增] Center 软更新 (防止 Center 死板)
-            with torch.no_grad():
-                batch_center = torch.mean(emb1, dim=0)
-                center = 0.995 * center + 0.005 * batch_center
-
             total_train_loss += loss.item()
             total_batches += 1
 
-            # 计算准确率 (仅针对 Masked Token)
+            # [新增] 计算准确率 (仅针对 Masked Token)
             with torch.no_grad():
                 preds = mlm_logits.argmax(dim=-1)
                 mask = (bert_label != -100)
@@ -241,7 +211,7 @@ def train(cfg):
 
             acc = total_correct / total_masked if total_masked > 0 else 0
 
-            # 保持原有的打印信息
+            # 实时显示 Acc，方便判断模型是否在学习
             progress_bar.set_postfix({
                 "Loss": f"{loss.item():.4f}",
                 "MLM_Acc": f"{acc:.2%}"
@@ -250,7 +220,7 @@ def train(cfg):
         avg_train_loss = total_train_loss / total_batches
 
         # Validation
-        avg_val_loss = validate(model, valid_loader, center, criterion_mlm, cfg.device, cfg)
+        avg_val_loss = validate(model, valid_loader, center, criterion_mlm, criterion_triplet, cfg.device, cfg)
 
         print(
             f"Epoch {epoch + 1}: Train Loss={avg_train_loss:.4f}, Val Loss={avg_val_loss:.4f}, Train Acc={total_correct / total_masked:.2%}")

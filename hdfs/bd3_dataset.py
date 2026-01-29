@@ -124,13 +124,13 @@ class LogDataset(Dataset):
                 output_label.append(-100)
                 continue
 
-            # TODO: 45% 的概率进行 Mask
-            if prob < 0.45:
+            # 15% 的概率进行 Mask
+            if prob < 0.15:
                 # 80% 几率 -> [MASK]
                 # 10% 几率 -> 随机词
                 # 10% 几率 -> 保持原样 (但 label 依然记录，用于让模型学习"这是对的")
 
-                prob /= 0.45    # 放大！现在 prob 是 0~1 之间了
+                prob /= 0.15    # 放大！现在 prob 是 0~1 之间了
 
                 if prob < 0.8:  # 直观！就是 80%
                     tokens[i] = self.tokenizer.mask_token_id
